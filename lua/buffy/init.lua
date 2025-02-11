@@ -6,7 +6,6 @@ local config = {
   popup_win = nil,
   popup_buf = nil,
   diewait = 2000,
-  timer = nil,
 }
 
 ---@class MyModule
@@ -21,22 +20,15 @@ local function shorten_path(path)
   return vim.fn.fnamemodify(path, ":.")
 end
 
--- Optional: close automatically after 2 seconds
-M.config.timer = vim.defer_fn(function()
-  if M.config.popup_win and vim.api.nvim_win_is_valid(M.config.popup_win) then
-    vim.api.nvim_win_close(M.config.popup_win, true)
-  end
-end, M.config.diewait)
-
 -- Create or update a floating window in the bottom-right corner, listing all buffers.
 function M.show_popup(listed_bufs, current_idx)
   -- If a previous popup window exists, close it before creating a new one.
   if M.config.popup_win and vim.api.nvim_win_is_valid(M.config.popup_win) then
     vim.api.nvim_win_close(M.config.popup_win, true)
   end
-  if M.config.timer then
-    M.config.timer:stop()
-    M.config.timer = nil
+  if M.timer then
+    M.timer:stop()
+    M.timer = nil
   end
 
   -- Prepare display lines
@@ -77,7 +69,7 @@ function M.show_popup(listed_bufs, current_idx)
   local editor_width = vim.o.columns
   local editor_height = vim.o.lines
 
-  -- Pop-up: decide where to place it (bottom-right corner)
+  -- Placement
   local win_opts = {
     relative = "editor",
     width = width,
@@ -91,6 +83,12 @@ function M.show_popup(listed_bufs, current_idx)
 
   local win = vim.api.nvim_open_win(buf, false, win_opts)
   M.config.popup_win = win
+
+  M.timer = vim.defer_fn(function()
+    if M.config.popup_win and vim.api.nvim_win_is_valid(M.config.popup_win) then
+      vim.api.nvim_win_close(M.config.popup_win, true)
+    end
+  end, M.config.diewait)
 end
 
 ---- Switch buffers by a certain direction (e.g. +1 or -1).
