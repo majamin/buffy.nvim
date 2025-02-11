@@ -1,7 +1,7 @@
 # README
 
 _buffy.nvim_ let's you visualize the buffer you're switching to
-when you press _<TAB>_ and _<S-TAB>_.
+when you press `<TAB>` and `<S-TAB>`.
 
 Enjoy!
 
