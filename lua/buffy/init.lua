@@ -108,9 +108,16 @@ end
 
 --- Safely close popup window if it exists
 local function close_popup()
-  -- Note: vim.defer_fn doesn't return a handle that can be stopped,
-  -- so we just rely on checking window validity in the callback
-  state.timer = nil
+  -- Stop and close any active timer
+  if state.timer then
+    pcall(function()
+      if not state.timer:is_closing() then
+        state.timer:stop()
+        state.timer:close()
+      end
+    end)
+    state.timer = nil
+  end
 
   if state.popup_win and vim.api.nvim_win_is_valid(state.popup_win) then
     pcall(vim.api.nvim_win_close, state.popup_win, true)
@@ -244,9 +251,20 @@ function M.show_popup(listed_bufs, current_idx)
   vim.wo[win].winhighlight = "Normal:BuffyNormal,FloatBorder:BuffyBorder"
   state.popup_win = win
 
-  -- Set up auto-close timer
+  -- Set up auto-close timer using libuv timer (can be stopped)
   if config.timeout > 0 then
-    state.timer = vim.defer_fn(close_popup, config.timeout)
+    local timer = (vim.uv or vim.loop).new_timer()
+    state.timer = timer
+    timer:start(
+      config.timeout,
+      0,
+      vim.schedule_wrap(function()
+        -- Only close if this is still the active timer and window
+        if state.timer == timer and state.popup_win == win then
+          close_popup()
+        end
+      end)
+    )
   end
 end
 
