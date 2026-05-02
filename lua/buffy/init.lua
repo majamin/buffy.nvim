@@ -11,7 +11,6 @@ local config = {
 }
 
 local popup_win = nil
-local popup_buf = nil
 local timer = nil
 local highlights_setup = false
 
@@ -63,7 +62,6 @@ local function close_popup()
     pcall(vim.api.nvim_win_close, popup_win, true)
   end
   popup_win = nil
-  popup_buf = nil
 end
 
 --- entries: array of buffer numbers (live) or {name=string} tables (deleted stubs)
@@ -122,7 +120,6 @@ local function show_popup(entries, current_idx)
 
   local buf = vim.api.nvim_create_buf(false, true)
   vim.bo[buf].bufhidden = "wipe"
-  popup_buf = buf
 
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, display_lines)
 
@@ -191,7 +188,7 @@ end
 local function get_listed_buffers()
   local listed = {}
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.bo[buf].buflisted then
+    if vim.bo[buf].buflisted and vim.bo[buf].buftype == "" then
       table.insert(listed, buf)
     end
   end
